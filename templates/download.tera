@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Studyscraper</title>
+        <link rel="icon" href="https://the-codeboy.com/img/peeper-32.png" type="image/png" />
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="text-center">Redirecting to Download...</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col text-center">
+                    <button class="btn btn-primary" onclick="window.location.href = '{{ url }}'">Click here to download</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            setTimeout(function() {
+                window.location.href = "{{ url }}";
+            }, 2000);
+        </script>
+  </body>
+</html>

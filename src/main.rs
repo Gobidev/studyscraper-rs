@@ -3,13 +3,36 @@ extern crate rocket;
 
 use reqwest::header::{HeaderMap, HeaderValue};
 use rocket::fs::FileServer;
+use rocket::http::ContentType;
 use rocket::response::Redirect;
+use rocket::response::{self, Responder, Response};
+use rocket::Request;
+use rocket_dyn_templates::{context, Template};
+
+enum MyResponse {
+    Redirect(Redirect),
+    Template(Template),
+}
+
+impl<'r, 'o: 'r> Responder<'r, 'o> for MyResponse {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'o> {
+        match self {
+            MyResponse::Redirect(redirect) => redirect.respond_to(req),
+            MyResponse::Template(template) => {
+                Response::build_from(template.respond_to(req).unwrap())
+                    .header(ContentType::HTML)
+                    .ok()
+            }
+        }
+    }
+}
 
 #[get("/download/<url>")]
-async fn download(url: &str) -> Redirect {
+async fn download(url: &str) -> MyResponse {
     if !url.starts_with("https://www.studydrive.net/") {
-        return Redirect::to("/not_found");
+        return MyResponse::Redirect(Redirect::to("/not_found"));
     }
+
     let doc_id = url
         .split('/')
         .last()
@@ -28,19 +51,22 @@ async fn download(url: &str) -> Redirect {
         let data = json["data"].as_object().unwrap();
         let name = data["filename"].as_str().unwrap();
         let ending = name.split('.').last().unwrap();
-        return Redirect::to(format!(
+        let url = format!(
             "https://cdn.studydrive.net/d/prod/documents/{}/original/{}.{}?token={}",
             doc_id, doc_id, ending, token
-        ));
+        );
+        return MyResponse::Template(Template::render("download", context! { url: url }));
     }
     let name = data["filename"].as_str().unwrap();
     let ending = name.split('.').last().unwrap();
     let preview = data["file_preview"].as_str().unwrap();
     let token = preview.split("token=").last().unwrap();
-    Redirect::to(format!(
+
+    let url = format!(
         "https://cdn.studydrive.net/d/prod/documents/{}/original/{}.{}?token={}",
         doc_id, doc_id, ending, token
-    ))
+    );
+    return MyResponse::Template(Template::render("download", context! { url: url }));
 }
 
 async fn get_token() -> Result<String, Box<dyn std::error::Error>> {
@@ -80,6 +106,7 @@ async fn send_get_request(doc_id: &str) -> Result<serde_json::Value, Box<dyn std
 #[launch]
 fn rocket() -> _ {
     rocket::build()
+        .attach(Template::fairing())
         .configure(
             rocket::Config::figment()
                 .merge(("address", "0.0.0.0"))
