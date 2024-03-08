@@ -12,6 +12,7 @@ COPY src/ src/
 RUN cargo install --path .
 
 COPY static/ static/
+COPY templates/ templates/
 
 CMD ["studyscraper"]
 
