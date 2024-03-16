@@ -21,14 +21,30 @@
             </div>
             <div class="row">
                 <div class="col text-center">
-                    <button class="btn btn-primary" onclick="window.location.href = '{{ url }}'">Click here to download</button>
+                    <a href="{{ url }}"id="download">
+                        <button class="btn btn-primary">Click here if nothing happens</button>
+                    </a>
                 </div>
             </div>
         </div>
         <script>
+            fetch("https://corsproxy.io/?"+encodeURI("{{ url }}"))
+                .then(response => response.blob())
+                .then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = "{{ name }}";
+            document.body.appendChild(a);
+            
             setTimeout(function() {
-                window.location.href = "{{ url }}";
-            }, 2000);
+                a.click();
+                a.remove();
+                document.querySelector("h1").textContent = "Download of file {{ name }} successful!";
+                document.getElementById("download").remove();
+            }, 1000);
+            })
+            .catch(error => console.error(error));
         </script>
   </body>
 </html>

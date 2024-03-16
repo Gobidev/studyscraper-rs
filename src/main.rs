@@ -10,8 +10,8 @@ use rocket::Request;
 use rocket_dyn_templates::{context, Template};
 
 enum MyResponse {
-    Redirect(Redirect),
-    Template(Template),
+    Redirect(Box<Redirect>),
+    Template(Box<Template>),
 }
 
 impl<'r, 'o: 'r> Responder<'r, 'o> for MyResponse {
@@ -30,7 +30,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for MyResponse {
 #[get("/download/<url>")]
 async fn download(url: &str) -> MyResponse {
     if !url.starts_with("https://www.studydrive.net/") {
-        return MyResponse::Redirect(Redirect::to("/not_found"));
+        return MyResponse::Redirect(Box::new(Redirect::to("/not_found")));
     }
 
     let doc_id = url
@@ -55,7 +55,10 @@ async fn download(url: &str) -> MyResponse {
             "https://cdn.studydrive.net/d/prod/documents/{}/original/{}.{}?token={}",
             doc_id, doc_id, ending, token
         );
-        return MyResponse::Template(Template::render("download", context! { url: url }));
+        return MyResponse::Template(Box::new(Template::render(
+            "download",
+            context! { url: url, name: name},
+        )));
     }
     let name = data["filename"].as_str().unwrap();
     let ending = name.split('.').last().unwrap();
@@ -66,7 +69,10 @@ async fn download(url: &str) -> MyResponse {
         "https://cdn.studydrive.net/d/prod/documents/{}/original/{}.{}?token={}",
         doc_id, doc_id, ending, token
     );
-    return MyResponse::Template(Template::render("download", context! { url: url }));
+    MyResponse::Template(Box::new(Template::render(
+        "download",
+        context! { url: url, name: name },
+    )))
 }
 
 async fn get_token() -> Result<String, Box<dyn std::error::Error>> {
